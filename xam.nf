@@ -1,9 +1,7 @@
 
-// standard set by params.accession = "M21012"
-// can be overtuned by $ nextflow run xam.nf --accession 123456
-// Change in --accession will be shown in the first workflowstep "print"
 params.accession = "M21012"
 params.download = "${projectDir}/downloads"
+params.with_cache = false
 params.cache = "${projectDir}/cache"
 params.out = "${projectDir}/output"
 
@@ -22,7 +20,7 @@ process download {
 }
 
 process onefile {
-	// storeDir params.cache
+	if (params.with_cache){storeDir params.cache}
 	input:
 		path fastafiles
 	output:
@@ -34,15 +32,14 @@ process onefile {
 }
 
 process mafft {
-	// storeDir params.cache
+	if (params.with_cache){storeDir params.cache}
 	container "https://depot.galaxyproject.org/singularity/mafft%3A7.525--h031d066_1"
 	input:
 		path fastafile
 	output:
-		path "mafftOut*"
+		path "mafftOut.fasta*"
 	"""
 		mafft ${fastafile} > mafftOut.fasta
-		mafft --auto ${fastafile} > mafftOutAuto.fasta
 	"""
 }
 
@@ -58,11 +55,11 @@ process trimal {
 	"""
 }
 
-// trimal -in ${fastafile} -out ${fastafile.getSimpleName()}.fasta -htmlout ${fastafile.getSimpleName()}.html -automated1
-
-
 workflow {
     print "Given accession number is: ${params.accession}"
+	print "Accession number parameter: --accession ######"
+	print "Create cache directory for intermediate files --with_cache"
+
 	download | onefile | mafft | trimal
 
 }
