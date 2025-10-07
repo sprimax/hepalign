@@ -22,7 +22,7 @@ process download {
 }
 
 process onefile {
-	storeDir params.cache
+	// storeDir params.cache
 	input:
 		path fastafiles
 	output:
@@ -33,9 +33,36 @@ process onefile {
 	"""
 }
 
+process mafft {
+	// storeDir params.cache
+	container "https://depot.galaxyproject.org/singularity/mafft%3A7.525--h031d066_1"
+	input:
+		path fastafile
+	output:
+		path "mafftOut*"
+	"""
+		mafft ${fastafile} > mafftOut.fasta
+		mafft --auto ${fastafile} > mafftOutAuto.fasta
+	"""
+}
+
+process trimal {
+	publishDir params.out, mode: 'copy', overwrite: true
+	container "https://depot.galaxyproject.org/singularity/trimal%3A1.5.0--h9948957_2"
+	input:
+		path fastafile
+	output:
+		path "${fastafile.getSimpleName()}*"
+	"""
+		trimal -in ${fastafile} -out ${fastafile.getSimpleName()}_trimal.fasta -htmlout ${fastafile.getSimpleName()}_trimal.html -automated1
+	"""
+}
+
+// trimal -in ${fastafile} -out ${fastafile.getSimpleName()}.fasta -htmlout ${fastafile.getSimpleName()}.html -automated1
+
 
 workflow {
     print "Given accession number is: ${params.accession}"
-	download | onefile
+	download | onefile | mafft | trimal
 
 }
