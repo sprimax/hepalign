@@ -10,17 +10,32 @@ params.out = "${projectDir}/output"
 process download {
 	storeDir params.download
 	output:
-		path "${params.accession}.fasta"
+		path "*.fasta"
 	"""
         wget \
         "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nuccore&id=${params.accession}&rettype=fasta&retmode=text" \
         -O ${params.accession}.fasta
+		wget \
+        "https://gitlab.com/dabrowskiw/cq-examples/-/raw/master/data/hepatitis_combined.fasta?inline=false" \
+        -O hepatitis_combined.fasta
+	"""
+}
+
+process onefile {
+	storeDir params.cache
+	input:
+		path fastafiles
+	output:
+		path "allSeqs.fasta"
+	"""
+		touch allSeqs.fasta
+		cat ${fastafiles} > allSeqs.fasta
 	"""
 }
 
 
 workflow {
     print "Given accession number is: ${params.accession}"
-	download()
+	download | onefile
 
 }
