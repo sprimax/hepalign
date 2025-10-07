@@ -37,7 +37,7 @@ process mafft {
 	input:
 		path fastafile
 	output:
-		path "mafftOut.fasta*"
+		path "mafftOut.fasta"
 	"""
 		mafft ${fastafile} > mafftOut.fasta
 	"""

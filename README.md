@@ -1,5 +1,7 @@
 # hepalign
 
+Use -profile containern
+
 The standard accession number is M21012
 Change the accession number by --accession #######
 
