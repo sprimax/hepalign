@@ -19,7 +19,7 @@ process download {
 	"""
 }
 
-process onefile {
+process oneFile {
 	if (params.with_cache){storeDir params.cache}
 	input:
 		path fastafiles
@@ -37,9 +37,10 @@ process mafft {
 	input:
 		path fastafile
 	output:
-		path "mafftOut.fasta"
+		path "mafftOut*"
 	"""
 		mafft ${fastafile} > mafftOut.fasta
+		mafft --auto ${fastafile} > mafftOutAuto.fasta
 	"""
 }
 
@@ -47,19 +48,22 @@ process trimal {
 	publishDir params.out, mode: 'copy', overwrite: true
 	container "https://depot.galaxyproject.org/singularity/trimal%3A1.5.0--h9948957_2"
 	input:
-		path fastafile
+		path fastafiles
 	output:
-		path "${fastafile.getSimpleName()}*"
+		path "*mafftOut*"
 	"""
-		trimal -in ${fastafile} -out ${fastafile.getSimpleName()}_trimal.fasta -htmlout ${fastafile.getSimpleName()}_trimal.html -automated1
+		for singlefasta in \$(ls ${fastafiles}); do trimal -in \$singlefasta -out trimal_\$singlefasta -htmlout trimal_\$singlefasta.html -automated1; done
+		for file in *.fasta.html; do mv "\$file" "\${file/.fasta/}"
+done
 	"""
 }
+
 
 workflow {
     print "Given accession number is: ${params.accession}"
 	print "Accession number parameter: --accession ######"
 	print "Create cache directory for intermediate files --with_cache"
 
-	download | onefile | mafft | trimal
+	download | oneFile | mafft | trimal
 
 }
