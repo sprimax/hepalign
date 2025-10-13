@@ -5,14 +5,22 @@ params.with_cache = false
 params.cache = "${projectDir}/cache"
 params.out = "${projectDir}/output"
 
-process download {
+process downloadRef {
 	storeDir params.download
 	output:
-		path "*.fasta"
+		path "${params.accession}.fasta"
 	"""
         wget \
         "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nuccore&id=${params.accession}&rettype=fasta&retmode=text" \
         -O ${params.accession}.fasta
+	"""
+}
+
+process downloadExp {
+	storeDir params.download
+	output:
+		path "hepatitis_combined.fasta"
+	"""
 		wget \
         "https://gitlab.com/dabrowskiw/cq-examples/-/raw/master/data/hepatitis_combined.fasta?inline=false" \
         -O hepatitis_combined.fasta
@@ -26,7 +34,6 @@ process oneFile {
 	output:
 		path "allSeqs.fasta"
 	"""
-		touch allSeqs.fasta
 		cat ${fastafiles} > allSeqs.fasta
 	"""
 }
@@ -53,17 +60,15 @@ process trimal {
 		path "*mafftOut*"
 	"""
 		for singlefasta in \$(ls ${fastafiles}); do trimal -in \$singlefasta -out trimal_\$singlefasta -htmlout trimal_\$singlefasta.html -automated1; done
-		for file in *.fasta.html; do mv "\$file" "\${file/.fasta/}"
-done
+		for file in *.fasta.html; do mv "\$file" "\${file/.fasta/}"; done
 	"""
 }
-
 
 workflow {
     print "Given accession number is: ${params.accession}"
 	print "Accession number parameter: --accession ######"
 	print "Create cache directory for intermediate files --with_cache"
 
-	download | oneFile | mafft | trimal
-
+	fileMerge_ch = downloadRef().concat(downloadExp()) | collect
+	oneFile(fileMerge_ch) | mafft | trimal
 }
